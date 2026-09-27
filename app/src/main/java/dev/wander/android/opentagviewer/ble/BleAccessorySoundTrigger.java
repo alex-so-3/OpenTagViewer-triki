@@ -195,6 +195,19 @@ public class BleAccessorySoundTrigger<D> implements AccessorySoundTrigger {
         }).subscribeOn(Schedulers.io());
     }
 
+    @Override
+    public io.reactivex.rxjava3.core.Completable stopSound(final Context context, final String accessoryJson) {
+        return io.reactivex.rxjava3.core.Completable.defer(() -> {
+            if (!this.permissionCheck.granted(context)) return io.reactivex.rxjava3.core.Completable.complete();
+            final Map<String, Integer> candidates = this.macResolver.currentMacAddresses(accessoryJson);
+            if (candidates == null || candidates.isEmpty()) return io.reactivex.rxjava3.core.Completable.complete();
+            return this.scanner.findNearby(context, candidates.keySet(), SCAN_TIMEOUT_MS)
+                    .flatMapCompletable(device -> device instanceof android.bluetooth.BluetoothDevice
+                            ? BleGattSoundTrigger.stopDult(context, (android.bluetooth.BluetoothDevice) device)
+                            : io.reactivex.rxjava3.core.Completable.complete());
+        }).onErrorComplete().subscribeOn(Schedulers.io());
+    }
+
     /**
      * {@link GattTrigger#trigger}, retried up to {@code attemptsLeft} times as long as each
      * failure is {@link BleSoundTriggerStatus#FAILED} - see {@link #GATT_ATTEMPTS}. Only the

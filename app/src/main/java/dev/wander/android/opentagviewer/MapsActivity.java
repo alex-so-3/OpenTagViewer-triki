@@ -1719,8 +1719,19 @@ public class MapsActivity extends AppCompatActivity implements IMapProvider.OnMa
     }
 
     private void stopContinuousPing() {
-        if (this.continuousPingDisposable != null && !this.continuousPingDisposable.isDisposed()) {
+        final boolean wasRinging = this.continuousPingDisposable != null
+                && !this.continuousPingDisposable.isDisposed();
+        if (wasRinging) {
             this.continuousPingDisposable.dispose();
+        }
+        // The last trigger may still be sounding (a DULT device plays until told otherwise or
+        // its own timeout), so tell it to stop rather than only not asking again
+        final BeaconData ringing = this.continuousPingBeaconId == null ? null
+                : this.beacons.get(this.continuousPingBeaconId);
+        if (wasRinging && ringing != null) {
+            final var async = AppDependencies.accessorySoundTrigger()
+                    .stopSound(this.getApplicationContext(), ringing.getInfo().getOwnedBeaconAccessoryJson())
+                    .subscribe(() -> Log.d(TAG, "Stop sent (or nothing to stop)"));
         }
         this.continuousPingDisposable = null;
 

@@ -239,4 +239,66 @@ public final class BleGattSoundTrigger {
             gatt.writeDescriptor(descriptor);
         }
     }
+
+    /** DULT Sound_Stop, little-endian like the start opcode. */
+    private static final byte[] DULT_STOP_OPCODE = {0x01, 0x03};
+
+    /**
+     * Connects and writes DULT's Sound_Stop, if the device has the DULT service; completes
+     * either way (and on any failure) within about ten seconds.
+     */
+    @SuppressLint("MissingPermission")
+    public static io.reactivex.rxjava3.core.Completable stopDult(
+            final Context context, final BluetoothDevice device) {
+        return io.reactivex.rxjava3.core.Completable.create(emitter -> {
+            final BluetoothGatt[] gattRef = new BluetoothGatt[1];
+            final BluetoothGattCallback callback = new BluetoothGattCallback() {
+                private BluetoothGattCharacteristic dult;
+
+                @Override
+                public void onConnectionStateChange(final BluetoothGatt gatt, final int status, final int newState) {
+                    if (newState == BluetoothProfile.STATE_CONNECTED) {
+                        gatt.discoverServices();
+                    } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                        gatt.close();
+                        emitter.onComplete();
+                    }
+                }
+
+                @Override
+                public void onServicesDiscovered(final BluetoothGatt gatt, final int status) {
+                    this.dult = characteristicOf(gatt, DULT_SERVICE, DULT_CHARACTERISTIC);
+                    if (this.dult == null) {
+                        gatt.disconnect();
+                        return;
+                    }
+                    gatt.setCharacteristicNotification(this.dult, true);
+                    final BluetoothGattDescriptor descriptor = this.dult.getDescriptor(CCCD);
+                    if (descriptor == null) {
+                        writeCharacteristicCompat(gatt, this.dult, DULT_STOP_OPCODE);
+                    } else {
+                        writeDescriptorCompat(gatt, descriptor, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+                    }
+                }
+
+                @Override
+                public void onDescriptorWrite(final BluetoothGatt gatt, final BluetoothGattDescriptor d, final int status) {
+                    if (this.dult != null) writeCharacteristicCompat(gatt, this.dult, DULT_STOP_OPCODE);
+                }
+
+                @Override
+                public void onCharacteristicWrite(final BluetoothGatt gatt, final BluetoothGattCharacteristic c, final int status) {
+                    Log.i(TAG, "DULT stop written to " + device.getAddress() + " (status=" + status + ")");
+                    gatt.disconnect();
+                }
+            };
+            gattRef[0] = device.connectGatt(context, false, callback);
+            emitter.setCancellable(() -> {
+                if (gattRef[0] != null) {
+                    gattRef[0].disconnect();
+                    gattRef[0].close();
+                }
+            });
+        }).timeout(10, java.util.concurrent.TimeUnit.SECONDS).onErrorComplete();
+    }
 }

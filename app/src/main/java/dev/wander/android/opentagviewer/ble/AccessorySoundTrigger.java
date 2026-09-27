@@ -37,4 +37,13 @@ public interface AccessorySoundTrigger {
      * end the loop. Dispose the subscription to stop.
      */
     Observable<BleSoundTriggerUpdate> playSoundContinuously(Context context, String accessoryJson);
+
+    /**
+     * Asks a sounding accessory to stop, where its protocol has a stop command (DULT's
+     * Sound_Stop). AirTags stop by themselves and have none, so the default does nothing.
+     * Never errors; best effort.
+     */
+    default io.reactivex.rxjava3.core.Completable stopSound(Context context, String accessoryJson) {
+        return io.reactivex.rxjava3.core.Completable.complete();
+    }
 }
