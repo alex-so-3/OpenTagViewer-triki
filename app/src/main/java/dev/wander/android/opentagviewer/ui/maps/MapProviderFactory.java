@@ -47,6 +47,28 @@ public class MapProviderFactory {
         replacement = null;
     }
 
+    /**
+     * The provider to actually use: Google Maps needs the key from secrets.properties, and a
+     * build without one gets OpenStreetMap (which needs none) instead of a map that cannot load.
+     */
+    public static String effectiveProvider(final android.content.Context context, final String providerType) {
+        if (providerType != null && !PROVIDER_GOOGLE.equals(providerType)) {
+            return providerType;
+        }
+        try {
+            final android.os.Bundle meta = context.getPackageManager().getApplicationInfo(
+                    context.getPackageName(), android.content.pm.PackageManager.GET_META_DATA).metaData;
+            final String key = meta == null ? null : meta.getString("com.google.android.geo.API_KEY");
+            if (key == null || key.isBlank() || key.equals("DEFAULT_API_KEY")) {
+                return PROVIDER_OSM;
+            }
+        } catch (final Exception e) {
+            Log.w(TAG, "Could not read the Maps API key; using OpenStreetMap", e);
+            return PROVIDER_OSM;
+        }
+        return providerType;
+    }
+
     public static IMapProvider create(String providerType) {
         if (replacement != null) {
             Log.d(TAG, "Creating a substituted map provider");
