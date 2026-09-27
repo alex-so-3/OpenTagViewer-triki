@@ -560,6 +560,9 @@ public class MapsActivity extends AppCompatActivity implements IMapProvider.OnMa
 
         // 根据用户设置创建地图提供商
         String mapProviderType = this.userSettings.getMapProvider();
+        // A build without a Google Maps key (secrets.properties) still has a map: OpenStreetMap
+        // needs no key, so it stands in for Google rather than the app refusing to start.
+        mapProviderType = MapProviderFactory.effectiveProvider(this, mapProviderType);
 
         // **Before the new provider touches it.** Changing provider calls recreate(), and the
         // FragmentManager restores Google's map fragment into this container while a plain view
@@ -1762,7 +1765,8 @@ public class MapsActivity extends AppCompatActivity implements IMapProvider.OnMa
         deviceInfoActivityLauncher.launch(deviceInfoIntent);
     }
 
-    private void checkApiKey() {
+    /** Whether this build carries a Google Maps key; without one the map falls back to OSM. */
+    private boolean checkApiKey() {
         try {
             ApplicationInfo appInfo = getPackageManager().getApplicationInfo(getPackageName(), PackageManager.GET_META_DATA);
             Bundle bundle = Objects.requireNonNull(appInfo.metaData);
@@ -1770,9 +1774,10 @@ public class MapsActivity extends AppCompatActivity implements IMapProvider.OnMa
             String apiKey = bundle.getString("com.google.android.geo.API_KEY");
 
             if (apiKey == null || apiKey.isBlank() || apiKey.equals("DEFAULT_API_KEY")) {
-                Toast.makeText(this, "API Key was not set in secrets.properties", LENGTH_SHORT).show();
-                throw new RuntimeException("API Key was not set in secrets.properties");
+                Log.w(TAG, "No Google Maps API key in secrets.properties; using OpenStreetMap");
+                return false;
             }
+            return true;
         } catch (PackageManager.NameNotFoundException e) {
             Log.e(TAG, "Package name not found.", e);
             throw new RuntimeException("Error getting package info", e);
