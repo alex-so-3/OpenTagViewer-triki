@@ -78,6 +78,8 @@ import dev.wander.android.opentagviewer.db.repo.model.UserSettings;
 import dev.wander.android.opentagviewer.db.room.OpenTagViewerDatabase;
 import dev.wander.android.opentagviewer.db.room.entity.Import;
 import dev.wander.android.opentagviewer.db.room.entity.UserBeaconOptions;
+import dev.wander.android.opentagviewer.source.ExternalAccessory;
+import dev.wander.android.opentagviewer.ui.importing.ExternalDeviceImporter;
 import dev.wander.android.opentagviewer.ui.compat.WindowPaddingUtil;
 import dev.wander.android.opentagviewer.util.android.CachedPhoneLocation;
 import dev.wander.android.opentagviewer.util.android.FusedPhoneLocation;
@@ -1097,6 +1099,9 @@ public class DeviceInfoActivity extends AppCompatActivity
      * knows the most about.
      */
     private String knownDeviceType() {
+        if (ExternalAccessory.isGoogle(this.accessoryJson())) {
+            return this.getString(R.string.google_find_hub_tracker);
+        }
         if (this.beaconInformation.isCustomAccessory()) {
             return this.getString(R.string.custom_tag);
         }
@@ -1208,6 +1213,11 @@ public class DeviceInfoActivity extends AppCompatActivity
         return this.beaconInformation.getName();
     }
 
+    private String accessoryJson() {
+        return this.beaconData == null || this.beaconData.getOwnedBeaconInfo() == null
+                ? null : this.beaconData.getOwnedBeaconInfo().accessoryJson;
+    }
+
     private void handleClickMenu() {
         Log.d(TAG, "Device more button clicked");
 
@@ -1216,6 +1226,14 @@ public class DeviceInfoActivity extends AppCompatActivity
         var popupMenu = new PopupMenu(this, button);
         popupMenu.getMenuInflater().inflate(R.menu.device_info_menu, popupMenu.getMenu());
 
+        // A Google tracker rings through FMDN (see RoutingSoundTrigger) but has nothing to link
+        // and no Everytag settings. A self-generated (OpenHaystack) tag may carry on-device settings.
+        final String accessoryJson = this.accessoryJson();
+        final boolean google = ExternalAccessory.isGoogle(accessoryJson);
+        popupMenu.getMenu().findItem(R.id.device_link_google).setVisible(!google);
+        popupMenu.getMenu().findItem(R.id.device_settings)
+                .setVisible(ExternalAccessory.isOpenHaystack(accessoryJson));
+
         popupMenu.setOnMenuItemClickListener(menuItem -> {
             Log.d(TAG, "Device menu option " + menuItem.getTitle() + " was selected");
 
@@ -1223,6 +1241,16 @@ public class DeviceInfoActivity extends AppCompatActivity
                 this.redirectToDeviceHistory();
             } else if (menuItem.getItemId() == R.id.device_play_sound_nearby) {
                 this.onClickPlaySoundNearby();
+            } else if (menuItem.getItemId() == R.id.device_link_google) {
+                new ExternalDeviceImporter(this, () ->
+                        Toast.makeText(this, R.string.google_link_saved, Toast.LENGTH_SHORT).show())
+                        .linkGoogleTracker(this.beaconId);
+            } else if (menuItem.getItemId() == R.id.device_settings) {
+                final Intent intent = new Intent(this, DeviceSettingsActivity.class);
+                intent.putExtra(DeviceSettingsActivity.EXTRA_BEACON_ID, this.beaconId);
+                intent.putExtra(DeviceSettingsActivity.EXTRA_ACCESSORY_JSON, accessoryJson);
+                intent.putExtra(DeviceSettingsActivity.EXTRA_NAME, this.beaconInformation.getName());
+                startActivity(intent);
             } else if (menuItem.getItemId() == R.id.device_delete) {
                 this.onClickDeviceDelete();
             }

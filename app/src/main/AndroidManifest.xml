@@ -181,6 +181,18 @@
             android:label="@string/information"
             android:theme="@style/Theme.OpenTagViewer.GenericGreyishActivity" />
         <activity
+            android:name=".ExtraSourcesSettingsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.OpenTagViewer.GenericGreyishActivity" />
+        <activity
+            android:name=".DeviceSettingsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.OpenTagViewer.GenericGreyishActivity" />
+        <service
+            android:name=".ble.DeviceDfuService"
+            android:exported="false"
+            android:foregroundServiceType="connectedDevice" />
+        <activity
             android:name=".SettingsActivity"
             android:exported="false"
             android:label="@string/settings"

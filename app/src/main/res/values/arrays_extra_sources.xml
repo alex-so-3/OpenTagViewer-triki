@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        Everytag's advertising period multiplier 1/2/4/8, shown as the resulting interval per
+        network while moving / while still. Numbers and units only, so not translated.
+    -->
+    <string-array name="advertising_intervals" translatable="false">
+        <item>1 s / 10 s</item>
+        <item>2 s / 20 s</item>
+        <item>4 s / 40 s</item>
+        <item>8 s / 80 s</item>
+    </string-array>
+</resources>

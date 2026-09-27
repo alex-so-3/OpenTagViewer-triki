@@ -563,6 +563,8 @@ dependencies {
     // OpenStreetMap via osmdroid: no API key, direct dependency (unlike AMap, which is loaded
     // reflectively for licensing reasons this library has none of).
     implementation(libs.osmdroid.android)
+    // Triki tag firmware updates over BLE
+    implementation(libs.nordic.dfu)
     implementation(libs.zip4j)
     implementation(libs.commons.csv)
 

@@ -9,6 +9,13 @@
         android:id="@+id/device_play_sound_nearby"
         android:title="@string/play_sound_nearby" />
 
+    <!-- Extra sources and on-device settings; visibility per device kind in DeviceInfoActivity -->
+    <item
+        android:id="@+id/device_link_google"
+        android:title="@string/link_google_tracker" />
+    <item
+        android:id="@+id/device_settings"
+        android:title="@string/device_settings" />
     <item
         android:id="@+id/device_delete"
         android:title="@string/remove_device" />
