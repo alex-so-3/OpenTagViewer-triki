@@ -31,16 +31,21 @@ This project is a relatively polished looking Android/Java UI-wrapper around the
 ## About this fork
 
 - **Google Find Hub trackers.** Trackers of your Google account can be added as devices
-  (*Add from Google Find Hub*), or linked to an existing device (*Link Google tracker*) so reports
-  from both networks land on one marker. The map card says which network a position came from.
-  Google is asked for fresh locations only when you refresh a tag.
+  (*Add from Google Find Hub*), or linked to an existing device (*Link Google tracker*). A tag
+  that advertises on both networks is then one device in the app, with the location reports of
+  both merged into its position and history. The map card says which network a position came
+  from. Google is asked for fresh locations only when you refresh a tag.
 - **Ringing and "Nearby" for Google trackers**, over Bluetooth with the owner ring of the Find Hub
   protocol.
 - **OpenHaystack keys from a `.keys` file** (*Add OpenHaystack key*), fetched through your Apple
-  account like any self-made tag.
-- **Device settings and firmware updates** for DIY tags with Everytag-compatible firmware (such as
-  [find-my-triki](https://github.com/alex-so-3/find-my-triki)): interval, TX power, motion threshold, networks, password, and a firmware update
-  from a `.zip` over Nordic Secure DFU.
+  account like any self-made tag. Files with several keys (tags that rotate through them, such as
+  Everytag) are imported whole.
+- **Device settings and firmware updates** for tags running
+  [find-my-triki](https://github.com/alex-so-3/find-my-triki): interval, TX power, motion
+  threshold, networks, password, and a firmware update from a `.zip` over Nordic Secure DFU. The
+  configuration service is modelled on Everytag's, but Everytag itself is not supported here: it
+  accepts connections only briefly, under a separate address, and some settings mean something
+  else there.
 - Ring failures are shown instead of being retried silently; works without a Google Maps API key
   (falls back to OpenStreetMap).
 
