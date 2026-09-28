@@ -8,15 +8,19 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
+import java.util.function.Function;
 
 /**
  * The accessory JSON of the two kinds of device the extra sources add.
  *
  * <ul>
- *   <li>An OpenHaystack key is FindMy.py's own {@code custom_rolling_key_accessory} with a single
- *   key, so everything that already works for self-generated tags (BLE matching, play sound,
- *   history) works for it unchanged.</li>
+ *   <li>OpenHaystack keys are FindMy.py's own {@code custom_rolling_key_accessory}, so everything
+ *   that already works for self-generated tags (BLE matching, play sound, history) works for them
+ *   unchanged. It takes every key of a tag that rotates through several (Everytag does), and
+ *   searches all of them on each fetch.</li>
  *   <li>A Google Find Hub tracker is {@code google_find_hub}: it has no Apple keys at all, and
  *   the Apple paths must never be handed one (FindMy.py raises on an unknown type).</li>
  * </ul>
@@ -56,21 +60,29 @@ public final class ExternalAccessory {
     }
 
     /**
-     * Reads the private key out of a Macless-Haystack / OpenHaystack {@code .keys} file
-     * ("Private key: &lt;base64&gt;"), as hex.
+     * Reads the private keys out of a Macless-Haystack / OpenHaystack {@code .keys} file
+     * ("Private key: &lt;base64&gt;", once per key), as hex, in file order and without repeats.
      *
-     * @throws IllegalArgumentException when there is none
+     * @throws IllegalArgumentException when there is none, or one is not a 28-byte key
      */
-    public static String privateKeyFromKeysFile(final String text) {
+    public static List<String> privateKeysFromKeysFile(final String text) {
+        return privateKeysFromKeysFile(text, b64 -> Base64.decode(b64, Base64.DEFAULT));
+    }
+
+    /** As above, with the Base64 decoder passed in: {@code android.util.Base64} is a stub on the JVM. */
+    static List<String> privateKeysFromKeysFile(final String text, final Function<String, byte[]> base64) {
+        final List<String> keys = new ArrayList<>();
         for (final String line : text.split("\n")) {
             final int colon = line.indexOf(':');
             if (colon > 0 && line.substring(0, colon).trim().equalsIgnoreCase("Private key")) {
-                final byte[] key = Base64.decode(line.substring(colon + 1).trim(), Base64.DEFAULT);
-                if (key.length != 28) break;
-                return toHex(key);
+                final byte[] key = base64.apply(line.substring(colon + 1).trim());
+                if (key.length != 28) throw new IllegalArgumentException("A private key is not 28 bytes long");
+                final String hex = toHex(key);
+                if (!keys.contains(hex)) keys.add(hex);
             }
         }
-        throw new IllegalArgumentException("No 28-byte \"Private key\" line in this file");
+        if (keys.isEmpty()) throw new IllegalArgumentException("No \"Private key\" line in this file");
+        return keys;
     }
 
     static String toHex(final byte[] bytes) {
@@ -79,13 +91,13 @@ public final class ExternalAccessory {
         return sb.toString();
     }
 
-    public static String newOpenHaystack(final String id, final String name, final String privateKeyHex) {
+    public static String newOpenHaystack(final String id, final String name, final List<String> privateKeysHex) {
         try {
             return new JSONObject()
                     .put("type", TYPE_OPENHAYSTACK)
                     .put("identifier", id)
                     .put("name", name)
-                    .put("private_keys", new JSONArray().put(privateKeyHex))
+                    .put("private_keys", new JSONArray(privateKeysHex))
                     .toString();
         } catch (final JSONException e) {
             throw new IllegalStateException(e);

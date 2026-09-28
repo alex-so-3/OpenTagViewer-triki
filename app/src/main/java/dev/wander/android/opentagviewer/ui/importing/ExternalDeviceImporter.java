@@ -57,13 +57,13 @@ public final class ExternalDeviceImporter {
     /** Call with the document the user picked (a .keys file). */
     public void importKeysFile(@Nullable final Uri uri) {
         if (uri == null) return;
-        final String privateKeyHex;
+        final List<String> privateKeys;
         try (InputStream in = this.activity.getContentResolver().openInputStream(uri)) {
             final ByteArrayOutputStream buf = new ByteArrayOutputStream();
             final byte[] chunk = new byte[4096];
             int n;
             while (in != null && (n = in.read(chunk)) > 0 && buf.size() < 65536) buf.write(chunk, 0, n);
-            privateKeyHex = ExternalAccessory.privateKeyFromKeysFile(buf.toString("UTF-8"));
+            privateKeys = ExternalAccessory.privateKeysFromKeysFile(buf.toString("UTF-8"));
         } catch (final Exception e) {
             Log.w(TAG, "Not a usable .keys file", e);
             Toast.makeText(this.activity, R.string.keys_file_invalid, Toast.LENGTH_LONG).show();
@@ -71,9 +71,9 @@ public final class ExternalDeviceImporter {
         }
 
         this.askName(this.activity.getString(R.string.openhaystack_default_name), name -> {
-            // The id is derived from the key, so importing the same file twice updates the row
-            final String id = "openhaystack-" + sha256Hex(privateKeyHex).substring(0, 16);
-            this.insert(id, ExternalAccessory.newOpenHaystack(id, name, privateKeyHex), "openhaystack-keys");
+            // The id is derived from the first key, so importing the same file twice updates the row
+            final String id = "openhaystack-" + sha256Hex(privateKeys.get(0)).substring(0, 16);
+            this.insert(id, ExternalAccessory.newOpenHaystack(id, name, privateKeys), "openhaystack-keys");
         });
     }
 
