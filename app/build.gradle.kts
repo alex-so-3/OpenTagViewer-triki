@@ -97,7 +97,7 @@ android {
         minSdk = 24
         targetSdk = 35
         versionCode = 5
-        versionName = "1.1.1"
+        versionName = "1.1.1-fork.1"
 
         // Null unless a build type sets it - see the debug block. A release is built from a tag
         // and its versionName is exactly right, so there is nothing a commit would add; the
