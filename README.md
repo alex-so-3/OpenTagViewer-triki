@@ -23,6 +23,34 @@ This project is a relatively polished looking Android/Java UI-wrapper around the
 
 <br>
 
+> [!IMPORTANT]
+> **This is a fork** that adds a second location network and on-device
+> tools on top of OpenTagViewer. Everything after the "About this fork" section is the original
+> app's README.
+
+## About this fork
+
+- **Google Find Hub trackers.** Trackers of your Google account can be added as devices
+  (*Add from Google Find Hub*), or linked to an existing device (*Link Google tracker*) so reports
+  from both networks land on one marker. The map card says which network a position came from.
+  Google is asked for fresh locations only when you refresh a tag.
+- **Ringing and "Nearby" for Google trackers**, over Bluetooth with the owner ring of the Find Hub
+  protocol.
+- **OpenHaystack keys from a `.keys` file** (*Add OpenHaystack key*), fetched through your Apple
+  account like any self-made tag.
+- **Device settings and firmware updates** for DIY tags with Everytag-compatible firmware (such as
+  [find-my-triki](https://github.com/alex-so-3/find-my-triki)): interval, TX power, motion threshold, networks, password, and a firmware update
+  from a `.zip` over Nordic Secure DFU.
+- Ring failures are shown instead of being retried silently; works without a Google Maps API key
+  (falls back to OpenStreetMap).
+
+Google reports come from a small self-hosted service, [googlefind-service](https://github.com/alex-so-3/googlefind-service) (Docker, GPL-3.0, built on
+GoogleFindMyTools). Set it up once, then enter its address and token in
+*Settings → Extra location sources* (optional HTTP Basic Auth for a reverse proxy).
+
+Build as described in [CONTRIBUTING.md](./CONTRIBUTING.md). A Google Maps key in
+`secrets.properties` is optional.
+
 > [!WARNING]
 > This project is not affiliated with Apple Inc. or Android/Google LLC in any capacity
 
@@ -53,7 +81,8 @@ This project is a relatively polished looking Android/Java UI-wrapper around the
 | **Self-made tags** ([OpenHaystack](https://github.com/seemoo-lab/openhaystack), [Macless Haystack](https://github.com/dchristl/macless-haystack)) | ✅ | Works; requires creating an export by [CLI](https://github.com/parawanderer/OpenTagViewer/wiki/How-To:-Export-AirTags-With-The-CLI) or [Wizard](https://github.com/parawanderer/OpenTagViewer/wiki/How-To:-Export-AirTags) |
 | **Your own iPhone, iPad or Mac** | ⚠️ | Partial coverage (see issue [#131](https://github.com/parawanderer/OpenTagViewer/issues/131)) |
 | **A tag someone shared with you** through Apple's own sharing | ❌ | Only the account that *owns* a tag can export it. Ask the owner to export it and send you the zip |
-| **Tile, Samsung SmartTag, Google Find My Device trackers** | ❌ | Different networks entirely, with nothing in common with Apple's. This is an open feature request that can be contributed to the app if wanted. |
+| **Google Find Hub trackers** | ✅ (this fork) | Through [googlefind-service](https://github.com/alex-so-3/googlefind-service) – see "About this fork" |
+| **Tile, Samsung SmartTag** | ❌ | Different networks entirely, with nothing in common with Apple's. |
 
 > [!NOTE]
 > This app (currently) reads Apple's Find My network. Anything not on that network cannot be tracked with it, no matter how similar the device looks.
